@@ -1,8 +1,9 @@
-﻿using AspNetCoreGrpcService;
+﻿using AspNetCore.Common;
+using AspNetCoreGrpcService;
 using Grpc.Net.Client;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 bool useHttps = true;
 
@@ -12,7 +13,7 @@ Console.Write("Test started.");
 
 Console.Write("Creating a grpc client...");
 GrpcChannel channel = GrpcChannel.ForAddress(useHttps ? "https://localhost:7098" : "http://localhost:5073");
-WeatherForecast.WeatherForecastClient client0 = new(channel);
+AspNetCoreGrpcService.WeatherForecast.WeatherForecastClient client0 = new(channel);
 Console.WriteLine(" Success");
 long totalMilliseconds0 = 0;
 totalMilliseconds0 += await CallGrpc(client0, 1);
@@ -41,12 +42,12 @@ Console.WriteLine("Average ms per item: {0}", averageMilliseconds1);
 
 Console.ReadKey();
 
-static async Task<long> CallGrpc(WeatherForecast.WeatherForecastClient client, int count)
+static async Task<long> CallGrpc(AspNetCoreGrpcService.WeatherForecast.WeatherForecastClient client, int count)
 {
     Console.Write("Calling grpc service for {0} items...", count);
 
     Stopwatch sw = Stopwatch.StartNew();
-    WeatherForecastReply response = await client.GetWeatherForecastsAsync(new WeatherForecastRequest { Count = count });
+    WeatherForecastReply response = await client.GetWeatherForecastsAsync(new AspNetCoreGrpcService.WeatherForecastRequest { Count = count });
     sw.Stop();
 
     bool isSuccess = response?.WeatherForecasts.Count == count;
@@ -67,10 +68,10 @@ static async Task<long> CallWebApi(HttpClient client, int count)
     Console.Write("Calling web api for {0} items...", count);
 
     Stopwatch sw = Stopwatch.StartNew();
-    HttpResponseMessage response = await client.PostAsync($"weatherforecast?count={count}", JsonContent.Create(new WeatherForecastRequest { Count = count }));
+    HttpResponseMessage response = await client.PostAsync($"weatherforecast?count={count}", JsonContent.Create(new AspNetCore.Common.WeatherForecastRequest(count)));
     sw.Stop();
 
-    bool isSuccess = response.StatusCode == System.Net.HttpStatusCode.OK && (await JsonSerializer.DeserializeAsync<AspNetCore.Common.WeatherForecast[]>(await response.Content.ReadAsStreamAsync()))?.Length == count;
+    bool isSuccess = response.StatusCode == HttpStatusCode.OK && (await response.Content.ReadFromJsonAsync<WeatherForecastResponse>())?.WeatherForecasts?.Length == count;
     if (isSuccess)
     {
         Console.WriteLine(" Success: {0}ms", sw.ElapsedMilliseconds);
