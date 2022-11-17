@@ -4,37 +4,51 @@ using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+bool useHttps = true;
+
+Console.Write("Test starting in 10 seconds...");
+await Task.Delay(1000 * 10);
+Console.Write("Test started.");
+
 Console.Write("Creating a grpc client...");
-//GrpcChannel channel = GrpcChannel.ForAddress("http://localhost:5073");
-GrpcChannel channel = GrpcChannel.ForAddress("https://localhost:7098");
+GrpcChannel channel = GrpcChannel.ForAddress(useHttps ? "https://localhost:7098" : "http://localhost:5073");
 WeatherForecast.WeatherForecastClient client0 = new(channel);
 Console.WriteLine(" Success");
-await CallGrpc(client0, 10);
-await CallGrpc(client0, 100);
-await CallGrpc(client0, 1000);
-await CallGrpc(client0, 10000);
-await CallGrpc(client0, 100000);
+long totalMilliseconds0 = 0;
+totalMilliseconds0 += await CallGrpc(client0, 1);
+totalMilliseconds0 += await CallGrpc(client0, 10);
+totalMilliseconds0 += await CallGrpc(client0, 100);
+totalMilliseconds0 += await CallGrpc(client0, 1000);
+totalMilliseconds0 += await CallGrpc(client0, 10000);
+totalMilliseconds0 += await CallGrpc(client0, 100000);
+double averageMilliseconds0 = totalMilliseconds0 / (double)(1 + 10 + 100 + 1000 + 10000 + 100000);
+Console.WriteLine("Average ms per item: {0}", averageMilliseconds0);
 
 Console.WriteLine();
 
 Console.Write("Creating a http client...");
-//HttpClient client = new() { BaseAddress = new Uri("http://localhost:5031") };
-HttpClient client1 = new() { BaseAddress = new Uri("https://localhost:7257") };
+HttpClient client1 = new() { BaseAddress = new Uri(useHttps ? "https://localhost:7257" : "http://localhost:5031") };
 Console.WriteLine(" Success");
-await CallWebApi(client1, 10);
-await CallWebApi(client1, 100);
-await CallWebApi(client1, 1000);
-await CallWebApi(client1, 10000);
-await CallWebApi(client1, 100000);
+long totalMilliseconds1 = 0;
+totalMilliseconds1 += await CallWebApi(client1, 1);
+totalMilliseconds1 += await CallWebApi(client1, 10);
+totalMilliseconds1 += await CallWebApi(client1, 100);
+totalMilliseconds1 += await CallWebApi(client1, 1000);
+totalMilliseconds1 += await CallWebApi(client1, 10000);
+totalMilliseconds1 += await CallWebApi(client1, 100000);
+double averageMilliseconds1 = totalMilliseconds1 / (double)(1 + 10 + 100 + 1000 + 10000 + 100000);
+Console.WriteLine("Average ms per item: {0}", averageMilliseconds1);
 
 Console.ReadKey();
 
-static async Task CallGrpc(WeatherForecast.WeatherForecastClient client, int count)
+static async Task<long> CallGrpc(WeatherForecast.WeatherForecastClient client, int count)
 {
     Console.Write("Calling grpc service for {0} items...", count);
+
     Stopwatch sw = Stopwatch.StartNew();
     WeatherForecastReply response = await client.GetWeatherForecastsAsync(new WeatherForecastRequest { Count = count });
     sw.Stop();
+
     bool isSuccess = response?.WeatherForecasts.Count == count;
     if (isSuccess)
     {
@@ -44,14 +58,18 @@ static async Task CallGrpc(WeatherForecast.WeatherForecastClient client, int cou
     {
         Console.WriteLine(" Error");
     }
+
+    return sw.ElapsedMilliseconds;
 }
 
-static async Task CallWebApi(HttpClient client, int count)
+static async Task<long> CallWebApi(HttpClient client, int count)
 {
     Console.Write("Calling web api for {0} items...", count);
+
     Stopwatch sw = Stopwatch.StartNew();
     HttpResponseMessage response = await client.PostAsync($"weatherforecast?count={count}", JsonContent.Create(new WeatherForecastRequest { Count = count }));
     sw.Stop();
+
     bool isSuccess = response.StatusCode == System.Net.HttpStatusCode.OK && (await JsonSerializer.DeserializeAsync<AspNetCore.Common.WeatherForecast[]>(await response.Content.ReadAsStreamAsync()))?.Length == count;
     if (isSuccess)
     {
@@ -61,4 +79,6 @@ static async Task CallWebApi(HttpClient client, int count)
     {
         Console.WriteLine(" Error");
     }
+
+    return sw.ElapsedMilliseconds;
 }
