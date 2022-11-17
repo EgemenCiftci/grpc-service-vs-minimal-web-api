@@ -21,5 +21,20 @@ message WeatherForecastReply {
 message WeatherForecastItem {
 	google.protobuf.Timestamp date = 1;
 	int32 temperatureC = 2;
-	string summary = 3;
+	Summaries summary = 3;
+	string summaryString = 4;
+	bool isCold = 5;
+}
+
+enum Summaries {
+	Freezing = 0;
+    Bracing = 1;
+    Chilly = 2;
+    Cool = 3;
+    Mild = 4;
+    Warm = 5;
+    Balmy = 6;
+    Hot = 7;
+    Sweltering = 8;
+    Scorching = 9;
 }

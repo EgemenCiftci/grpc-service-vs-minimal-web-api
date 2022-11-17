@@ -19,8 +19,10 @@ public class WeatherForecastService : WeatherForecast.WeatherForecastBase
             IEnumerable<WeatherForecastItem> weatherForecastItems = weatherForecasts.Select(f => new WeatherForecastItem
             {
                 Date = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(f.Date.ToDateTime(TimeOnly.MinValue).ToUniversalTime()),
-                Summary = f.Summary,
-                TemperatureC = f.TemperatureC
+                Summary = (Summaries)(int)f.Summary,
+                SummaryString = f.SummaryString,
+                TemperatureC = f.TemperatureC,
+                IsCold = f.IsCold
             });
             wfr.WeatherForecasts.AddRange(weatherForecastItems);
 

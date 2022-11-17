@@ -20,7 +20,8 @@ app.UseHttpsRedirection();
 
 app.MapPost("/weatherforecast", async (WeatherForecastRequest request) =>
 {
-    return new WeatherForecastResponse(await WeatherForecastService.GetAsync(request.Count));
+    var weatherForecasts = await WeatherForecastService.GetAsync(request.Count);
+    return new WeatherForecastResponse(weatherForecasts.Select(f => new WeatherForecast(f.Date, f.TemperatureC, f.Summary, f.SummaryString, f.IsCold)).ToArray());
 })
 .WithName("GetWeatherForecast")
 .WithOpenApi();
