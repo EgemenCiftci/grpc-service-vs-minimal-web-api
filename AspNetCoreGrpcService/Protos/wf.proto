@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "AspNetCoreGrpcService";
+
+package wf;
+
+service WeatherForecast {
+    rpc GetWeatherForecasts(WeatherForecastRequest) returns (WeatherForecastReply);
+}
+
+message WeatherForecastRequest {
+    int32 count = 1;
+}
+
+message WeatherForecastReply {
+    repeated WeatherForecastItem weatherForecasts = 1;
+}
+
+message WeatherForecastItem {
+	google.protobuf.Timestamp date = 1;
+	int32 temperatureC = 2;
+	string summary = 3;
+}
